@@ -101,11 +101,11 @@ services:
     ports:
       - "${LITELLM_PORT:-4000}:4000"
     healthcheck:
-      test: ["CMD", "busybox", "wget", "--spider", "-q", "http://localhost:4000/health/liveliness"]
-      interval: 15s
+      test: ["CMD-SHELL", "wget --quiet --tries=1 http://localhost:4000/health/liveliness || exit 1"]
+      interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 40s
     networks:
       - ai-internal
       - model-net
@@ -176,12 +176,6 @@ services:
       LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-}
     ports:
       - "${LANGFUSE_PORT:-3001}:3001"
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/public/health"]
-      interval: 15s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
     networks:
       - ai-internal
 
