@@ -238,5 +238,59 @@ prometheus.scrape "dcgm" {
   forward_to = [prometheus.remote_write.local.receiver]
 }
 
+// ============================================================
+// LiteLLM Gateway Metrics
+// ============================================================
+
+// Scrape LiteLLM proxy metrics (request latency, token usage, etc.)
+prometheus.scrape "litellm" {
+  scrape_interval = "15s"
+  targets = [{
+    __address__ = "litellm:4000",
+    job         = "litellm",
+    instance    = constants.hostname,
+  }]
+  metrics_path = "/metrics"
+  forward_to   = [prometheus.remote_write.local.receiver]
+}
+
+// ============================================================
+// Model Endpoint Metrics (vLLM, SGLang, etc.)
+// ============================================================
+
+// File-based service discovery for model containers.
+// Edit model_targets.json to add/remove model endpoints — Alloy picks
+// up changes automatically, no restart needed.
+//
+// Example model_targets.json entry:
+//   [{"targets": ["vllm-llama70b:8000"], "labels": {"model": "llama-70b", "backend": "vllm"}}]
+
+local.file_match "model_targets" {
+  path_targets = [{
+    __path__ = "/etc/alloy/model_targets.json",
+  }]
+}
+
+discovery.file "model_endpoints" {
+  files = ["/etc/alloy/model_targets.json"]
+  refresh_interval = "15s"
+}
+
+discovery.relabel "model_endpoints" {
+  targets = discovery.file.model_endpoints.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+}
+
+prometheus.scrape "model_endpoints" {
+  scrape_interval = "15s"
+  targets    = discovery.relabel.model_endpoints.output
+  metrics_path = "/metrics"
+  forward_to = [prometheus.remote_write.local.receiver]
+}
+
 // Enable live debugging features (empty config means use defaults)
 livedebugging{}

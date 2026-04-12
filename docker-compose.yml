@@ -1,35 +1,193 @@
 services:
 
-  loki:
-    image: grafana/loki:${GRAFANA_LOKI_VERSION:-3.6.7}
-    ports:
-      - 3100:3100/tcp
-    volumes:
-      - ./loki-config.yaml:/etc/loki/local-config.yaml
-    command: -config.file=/etc/loki/local-config.yaml
+  # ============================================================
+  # Databases & Dependencies
+  # ============================================================
 
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-16}
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-litellm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-litellm}
+      POSTGRES_DB: litellm
+      # Create additional databases for Langfuse on first run
+      POSTGRES_MULTIPLE_DATABASES: langfuse
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-multi-db.sh:/docker-entrypoint-initdb.d/init-multi-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d litellm -U ${POSTGRES_USER:-litellm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-internal
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-24.12}
+    restart: always
+    environment:
+      CLICKHOUSE_DB: langfuse
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-langfuse}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-langfuse}
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--host", "localhost", "--query", "SELECT 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-internal
+
+  redis:
+    image: redis:${REDIS_VERSION:-7}
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-internal
+
+  # ============================================================
+  # AI Gateway
+  # ============================================================
+
+  litellm:
+    image: ghcr.io/berriai/litellm:${LITELLM_VERSION:-main-stable}
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-litellm}:${POSTGRES_PASSWORD:-litellm}@postgres:5432/litellm
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-change-me}
+      STORE_MODEL_IN_DB: "True"
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-local}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-local}
+      LANGFUSE_HOST: http://langfuse:3001
+    command: --config /app/config.yaml --port 4000
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+    ports:
+      - "${LITELLM_PORT:-4000}:4000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - ai-internal
+      - model-net
+
+  # ============================================================
+  # LLM Observability
+  # ============================================================
+
+  langfuse:
+    image: langfuse/langfuse:${LANGFUSE_VERSION:-3}
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-litellm}:${POSTGRES_PASSWORD:-litellm}@postgres:5432/langfuse
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-langfuse}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-langfuse}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-change-me-nextauth-secret}
+      SALT: ${LANGFUSE_SALT:-change-me-salt}
+      NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3001}
+      PORT: 3001
+      LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-}
+      LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-}
+      LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-}
+      LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_INIT_PROJECT_NAME:-}
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-local}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-local}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-}
+      LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-}
+    ports:
+      - "${LANGFUSE_PORT:-3001}:3001"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/api/public/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - ai-internal
+
+  # ============================================================
+  # Metrics & Logs Storage
+  # ============================================================
 
   prometheus:
-     image: prom/prometheus:${PROMETHEUS_VERSION:-v3.10.0}
-     command:
-       - --web.enable-remote-write-receiver
-       - --config.file=/etc/prometheus/prometheus.yml
-     ports:
-      - 9090:9090/tcp
-     volumes:
-        - ./prom-config.yaml:/etc/prometheus/prometheus.yml
+    image: prom/prometheus:${PROMETHEUS_VERSION:-v3.10.0}
+    restart: always
+    command:
+      - --web.enable-remote-write-receiver
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./prom-config.yaml:/etc/prometheus/prometheus.yml:ro
+      - ./model_targets.json:/etc/prometheus/model_targets.json:ro
+      - prometheus-data:/prometheus
+    networks:
+      - ai-internal
+      - model-net
 
+  loki:
+    image: grafana/loki:${GRAFANA_LOKI_VERSION:-3.6.7}
+    restart: always
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/tmp/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - ai-internal
+
+  # ============================================================
+  # Dashboards
+  # ============================================================
 
   grafana:
     image: grafana/grafana:${GRAFANA_VERSION:-12.4.0}
+    restart: always
     environment:
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_BASIC_ENABLED=false
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_BASIC_ENABLED: "false"
     ports:
-      - 3000:3000/tcp
+      - "${GRAFANA_PORT:-3000}:3000"
     volumes:
       - ./dashboards:/etc/grafana/provisioning/dashboards/json:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
     entrypoint:
        - sh
        - -euc
@@ -71,9 +229,16 @@ services:
              foldersFromFilesStructure: false
          EOF
          /run.sh
+    networks:
+      - ai-internal
+
+  # ============================================================
+  # Host & Container Metrics Collection
+  # ============================================================
 
   dcgm-exporter:
     image: nvidia/dcgm-exporter:${DCGM_EXPORTER_VERSION:-3.3.9-3.6.1-ubuntu22.04}
+    restart: always
     deploy:
       resources:
         reservations:
@@ -82,18 +247,21 @@ services:
               count: all
               capabilities: [gpu]
     ports:
-      - 9400:9400/tcp
+      - "${DCGM_PORT:-9400}:9400"
+    networks:
+      - ai-internal
 
   alloy:
     image: grafana/alloy:${GRAFANA_ALLOY_VERSION:-v1.14.0}
+    restart: always
     privileged: true
     pid: host
     environment:
-      - HOST_ROOT_PREFIX=/host
+      HOST_ROOT_PREFIX: /host
     ports:
-      - 12345:12345
+      - "${ALLOY_PORT:-12345}:12345"
     volumes:
-      - ./config.alloy:/etc/alloy/config.alloy
+      - ./config.alloy:/etc/alloy/config.alloy:ro
       - /:/host:ro,rslave
       - /var/log:/var/log:ro
       - /run/log/journal:/run/log/journal:ro
@@ -102,4 +270,36 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /var/run:/var/run:ro
+      - ./model_targets.json:/etc/alloy/model_targets.json:ro
     command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - ai-internal
+      - model-net
+
+# ============================================================
+# Networks
+# ============================================================
+
+networks:
+  # Internal network for infrastructure services
+  ai-internal:
+
+  # External network for model containers (vLLM, SGLang, etc.)
+  # Create with: docker network create model-net
+  model-net:
+    external: true
+
+# ============================================================
+# Volumes
+# ============================================================
+
+volumes:
+  pgdata:
+  clickhouse-data:
+  clickhouse-logs:
+  prometheus-data:
+  loki-data:
+  grafana-data:
