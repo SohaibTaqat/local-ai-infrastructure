@@ -114,8 +114,8 @@ services:
   # LLM Observability
   # ============================================================
 
-  langfuse-worker:
-    image: langfuse/langfuse-worker:${LANGFUSE_VERSION:-3}
+  langfuse-web:
+    image: langfuse/langfuse:${LANGFUSE_VERSION:-3}
     restart: always
     depends_on: &langfuse-depends-on
       postgres:
@@ -154,15 +154,6 @@ services:
       LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
       LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
       LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
-    networks:
-      - ai-internal
-
-  langfuse-web:
-    image: langfuse/langfuse:${LANGFUSE_VERSION:-3}
-    restart: always
-    depends_on: *langfuse-depends-on
-    environment:
-      <<: *langfuse-env
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-change-me-nextauth-secret}
       PORT: 3001
       LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-}
@@ -176,6 +167,23 @@ services:
       LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-}
     ports:
       - "${LANGFUSE_PORT:-3001}:3001"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://0.0.0.0:3001/api/public/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - ai-internal
+
+  langfuse-worker:
+    image: langfuse/langfuse-worker:${LANGFUSE_VERSION:-3}
+    restart: always
+    depends_on:
+      langfuse-web:
+        condition: service_healthy
+    environment:
+      <<: *langfuse-env
     networks:
       - ai-internal
 
