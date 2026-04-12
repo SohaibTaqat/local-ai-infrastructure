@@ -1,0 +1,514 @@
+{
+  "id": null,
+  "uid": "gpu-overview",
+  "title": "GPU Overview",
+  "tags": ["gpu", "nvidia"],
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "time": { "from": "now-1h", "to": "now" },
+  "annotations": { "list": [] },
+  "links": [],
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 300,
+      "title": "GPU Info",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "text" }
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "title": "GPU Count",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "count(DCGM_FI_DEV_GPU_UTIL{job=\"dcgm\"})",
+          "refId": "A"
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "text" }
+        }
+      },
+      "gridPos": { "h": 4, "w": 18, "x": 6, "y": 1 },
+      "id": 2,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "name"
+      },
+      "title": "GPU Models",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}} — {{modelName}}",
+          "refId": "A"
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 301,
+      "title": "Utilization & Memory",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 6 },
+      "id": 10,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "orientation": "auto"
+      },
+      "title": "GPU Utilization",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 6 },
+      "id": 11,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "orientation": "auto"
+      },
+      "title": "Memory Utilization",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"} / (DCGM_FI_DEV_FB_USED{job=\"dcgm\"} + DCGM_FI_DEV_FB_FREE{job=\"dcgm\"}) * 100",
+          "legendFormat": "GPU {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "decmbytes",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "text", "value": null }]
+          }
+        }
+      },
+      "gridPos": { "h": 3, "w": 12, "x": 12, "y": 13 },
+      "id": 12,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
+      },
+      "title": "",
+      "transparent": true,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}} Used",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"} + DCGM_FI_DEV_FB_FREE{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}} Total",
+          "refId": "B"
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "id": 302,
+      "title": "Temperature & Power",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "celsius",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "orange", "value": 75 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 17 },
+      "id": 20,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "orientation": "auto"
+      },
+      "title": "GPU Temperature",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "watt",
+          "min": 0,
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 300 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 17 },
+      "id": 21,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "orientation": "auto"
+      },
+      "title": "Power Draw",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "id": 303,
+      "title": "Clocks & Encoder",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "rotmhz",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "super-light-blue", "value": null },
+              { "color": "blue", "value": 1000 },
+              { "color": "purple", "value": 2000 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 25 },
+      "id": 30,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showUnfilled": true
+      },
+      "title": "SM Clock",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_SM_CLOCK{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "rotmhz",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "super-light-green", "value": null },
+              { "color": "green", "value": 4000 },
+              { "color": "yellow", "value": 8000 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 25 },
+      "id": 31,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showUnfilled": true
+      },
+      "title": "Memory Clock",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_MEM_CLOCK{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "id": 304,
+      "title": "Trends",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 40,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "GPU Utilization Over Time",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "decmbytes"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 41,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "GPU Memory Over Time",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}} Used",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"} + DCGM_FI_DEV_FB_FREE{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}} Total",
+          "refId": "B"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "celsius"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 42,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "GPU Temperature Over Time",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "mode": "none" }
+          },
+          "unit": "watt"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "id": 43,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Power Draw Over Time",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "" },
+          "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm\"}",
+          "legendFormat": "GPU {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "type": "timeseries"
+    }
+  ]
+}
