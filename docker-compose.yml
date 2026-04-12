@@ -27,45 +27,54 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-24.12}
     restart: always
+    user: "101:101"
     environment:
-      CLICKHOUSE_DB: langfuse
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-langfuse}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-langfuse}
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse}
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
-      - ./clickhouse-config.xml:/etc/clickhouse-server/config.d/keeper.xml:ro
     healthcheck:
-      test: ["CMD", "clickhouse-client", "--host", "localhost", "--query", "SELECT 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 1s
     networks:
       - ai-internal
 
   redis:
     image: redis:${REDIS_VERSION:-7}
     restart: always
+    command: >
+      --requirepass ${REDIS_AUTH:-redis}
+      --maxmemory-policy noeviction
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_AUTH:-redis}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - ai-internal
 
-  seaweedfs:
-    image: chrislusf/seaweedfs:${SEAWEEDFS_VERSION:-latest}
+  minio:
+    image: cgr.dev/chainguard/minio
     restart: always
-    command: server -s3 -s3.port=8333 -master.volumeSizeLimitMB=100
+    entrypoint: sh
+    # Create the 'langfuse' bucket before starting the service
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-miniosecret}
     volumes:
-      - seaweedfs-data:/data
+      - minio-data:/data
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9333/cluster/status"]
-      interval: 15s
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 1s
     networks:
       - ai-internal
 
@@ -85,7 +94,7 @@ services:
       STORE_MODEL_IN_DB: "True"
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-local}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-local}
-      LANGFUSE_HOST: http://langfuse:3001
+      LANGFUSE_HOST: http://langfuse-web:3001
     command: --config /app/config.yaml --port 4000
     volumes:
       - ./litellm-config.yaml:/app/config.yaml:ro
@@ -105,29 +114,56 @@ services:
   # LLM Observability
   # ============================================================
 
-  langfuse:
-    image: langfuse/langfuse:${LANGFUSE_VERSION:-3}
+  langfuse-worker:
+    image: langfuse/langfuse-worker:${LANGFUSE_VERSION:-3}
     restart: always
-    depends_on:
+    depends_on: &langfuse-depends-on
       postgres:
         condition: service_healthy
-      clickhouse:
+      minio:
         condition: service_healthy
       redis:
         condition: service_healthy
-      seaweedfs:
+      clickhouse:
         condition: service_healthy
-    environment:
+    environment: &langfuse-env
       DATABASE_URL: postgresql://${POSTGRES_USER:-litellm}:${POSTGRES_PASSWORD:-litellm}@postgres:5432/langfuse
       CLICKHOUSE_URL: http://clickhouse:8123
       CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-langfuse}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-langfuse}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-change-me-nextauth-secret}
+      REDIS_AUTH: ${REDIS_AUTH:-redis}
       SALT: ${LANGFUSE_SALT:-change-me-salt}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
       NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3001}
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio}
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-miniosecret}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio}
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-miniosecret}
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
+    networks:
+      - ai-internal
+
+  langfuse-web:
+    image: langfuse/langfuse:${LANGFUSE_VERSION:-3}
+    restart: always
+    depends_on: *langfuse-depends-on
+    environment:
+      <<: *langfuse-env
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-change-me-nextauth-secret}
       PORT: 3001
       LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-}
       LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-}
@@ -138,13 +174,6 @@ services:
       LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-}
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-}
       LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-}
-      LANGFUSE_S3_EVENT_UPLOAD_ENABLED: "true"
-      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
-      LANGFUSE_S3_EVENT_UPLOAD_REGION: us-east-1
-      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-langfuse}
-      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-langfuse}
-      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://seaweedfs:8333
-      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
     ports:
       - "${LANGFUSE_PORT:-3001}:3001"
     healthcheck:
@@ -326,7 +355,7 @@ volumes:
   pgdata:
   clickhouse-data:
   clickhouse-logs:
-  seaweedfs-data:
+  minio-data:
   prometheus-data:
   loki-data:
   grafana-data:
