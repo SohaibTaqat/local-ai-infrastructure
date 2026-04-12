@@ -61,10 +61,11 @@ services:
     volumes:
       - seaweedfs-data:/data
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8333"]
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:8333/ || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - ai-internal
 
