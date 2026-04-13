@@ -1,107 +1,174 @@
-# Linux Server Monitoring Stack
+# Local AI Infrastructure
 
-A simple hardware monitoring stack for Ubuntu servers using Grafana Alloy, Prometheus, Loki, and Grafana.
+Production-grade, single-node local AI serving infrastructure. Deploy models with vLLM/SGLang, route requests through LiteLLM, track usage with Langfuse, and monitor everything with Grafana.
 
-## What You Get
+## Services
 
-- CPU usage (per core)
-- Memory and swap usage
-- Disk I/O and space
-- Network traffic
-- System load
-- System logs (journald + file logs)
-- Docker container metrics (CPU, memory, network per container)
-- Docker container logs (auto-discovered, including new containers)
-- NVIDIA GPU metrics (utilization, memory, temperature, power, clocks)
+| Service | Port | Purpose |
+|---------|------|---------|
+| LiteLLM | 4000 | AI gateway — routing, auth, rate limits, load balancing |
+| Langfuse | 3001 | LLM observability — traces, token usage, cost tracking |
+| Grafana | 3000 | Dashboards (no login required) |
+| Prometheus | 9090 | Metrics storage |
+| Loki | 3100 | Log storage |
+| Alloy | 12345 | Metrics + log collector |
+| DCGM Exporter | 9400 | NVIDIA GPU metrics |
+| Postgres | 5432 | Database for LiteLLM + Langfuse |
+| ClickHouse | 8123 | Langfuse analytics storage |
+| Redis | 6379 | Langfuse cache/queue |
+| MinIO | 9000 | S3-compatible blob storage for Langfuse |
 
 ## Requirements
 
-- Ubuntu 20.04+ (or other modern Linux with systemd)
-- Docker and Docker Compose
-- NVIDIA Container Toolkit (for GPU monitoring)
+- Ubuntu 20.04+ with Docker and Docker Compose
+- NVIDIA Container Toolkit (for GPU monitoring + model serving)
 
-## Setup
+## Quick Start
 
 ```bash
-git clone https://github.com/SohaibTaqat/server-monitor.git
-cd server-monitor
+git clone https://github.com/SohaibTaqat/local-ai-infrastructure.git
+cd local-ai-infrastructure
+
+# Create the external network for model containers
+docker network create model-net
+
+# Configure environment
+cp .env.example .env
+# Edit .env — change passwords, secrets, and Langfuse init settings
+
+# Start the stack
 docker compose up -d
 ```
 
-## Access
+## Deploy a Model
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| Grafana | http://localhost:3000 | Dashboards and logs |
-| Alloy | http://localhost:12345 | Pipeline debugging |
-| Prometheus | http://localhost:9090 | Raw metrics queries |
-| DCGM Exporter | http://localhost:9400 | GPU metrics endpoint |
+Models run separately on the `model-net` network:
 
-No login required - anonymous admin is enabled.
+```bash
+# Start a vLLM container
+docker run -d \
+  --name vllm-qwen \
+  --network model-net \
+  --gpus '"device=0"' \
+  vllm/vllm-openai \
+  --model Qwen/Qwen2.5-7B-Instruct \
+  --port 8000
+
+# Register it in LiteLLM (no restart needed)
+curl -X POST http://localhost:4000/model/new \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_name": "qwen-7b",
+    "litellm_params": {
+      "model": "openai/Qwen/Qwen2.5-7B-Instruct",
+      "api_base": "http://vllm-qwen:8000/v1"
+    }
+  }'
+
+# Add to metrics scraping (edit model_targets.json)
+# [{"targets": ["vllm-qwen:8000"], "labels": {"model": "qwen-7b", "backend": "vllm"}}]
+```
+
+## Send a Request
+
+```bash
+curl http://localhost:4000/v1/chat/completions \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen-7b",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+## Teams and API Keys
+
+```bash
+# Create a team
+curl -X POST http://localhost:4000/team/new \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"team_alias": "backend-team"}'
+
+# Create an API key for that team
+curl -X POST http://localhost:4000/key/generate \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"team_id": "<team_id>", "key_alias": "backend-prod"}'
+```
+
+## Load Balancing
+
+Register the same model name with multiple backends:
+
+```bash
+# GPU 0
+curl -X POST http://localhost:4000/model/new \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_name": "llama-70b",
+    "litellm_params": {
+      "model": "openai/meta-llama/Llama-3.1-70B-Instruct",
+      "api_base": "http://vllm-llama-gpu0:8000/v1"
+    }
+  }'
+
+# GPU 1 — same model_name, different backend
+curl -X POST http://localhost:4000/model/new \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_name": "llama-70b",
+    "litellm_params": {
+      "model": "openai/meta-llama/Llama-3.1-70B-Instruct",
+      "api_base": "http://vllm-llama-gpu1:8000/v1"
+    }
+  }'
+```
+
+LiteLLM routes across them automatically.
 
 ## Dashboards
 
-### Hardware Overview (auto-provisioned)
-A quick-glance dashboard with:
-- **System stats** — uptime, CPU cores, total RAM, load average
-- **Health gauges** — CPU, RAM, swap, root filesystem usage
-- **Per-core CPU** bar chart + CPU temperature gauge
-- **Network & Disk I/O** — stats with sparklines
-
-### Node Exporter Full (optional manual import)
-1. Open Grafana at http://localhost:3000
-2. Go to **Dashboards** > **Import**
-3. Enter ID `1860` and click **Load**
-4. Select **Prometheus** as the data source
-5. Click **Import**
-
-### GPU Overview (auto-provisioned)
-A dashboard for NVIDIA GPUs with:
-- **GPU info** — count and model names (auto-discovered)
-- **Utilization & memory gauges** — per GPU side by side
-- **Temperature & power gauges** — per GPU
-- **Clock speeds** — SM and memory clocks as bar gauges
-- **Trend graphs** — utilization, memory, temperature, and power over time
-
-### Docker Containers (auto-provisioned)
-A "Docker Containers" dashboard with:
-- **Overview table** — all containers with CPU %, memory, and network I/O at a glance
-- **Per-container detail** — select a container from the dropdown to see CPU, memory, and network graphs plus live logs
-
-### Log Explorer
-Open http://localhost:3000/a/grafana-lokiexplore-app to explore system and container logs.
+| Dashboard | Content |
+|-----------|---------|
+| Hardware Overview | CPU, memory, disk, network, load |
+| GPU Overview | Utilization, memory, temperature, power per GPU |
+| Docker Containers | Per-container CPU, memory, network + logs |
+| LLM Gateway | Request rate, latency, tokens, per-team/key breakdown |
 
 ## Commands
 
 ```bash
-# Start the stack
-docker compose up -d
-
-# Stop the stack
-docker compose down
-
-# View logs
-docker compose logs -f
-
-# Restart after config changes
-docker compose restart alloy
+docker compose up -d              # Start
+docker compose down               # Stop
+docker compose down -v            # Stop + delete all data
+docker compose restart alloy      # Restart after config changes
+docker compose logs -f            # Tail all logs
+docker compose logs -f litellm    # Tail specific service
 ```
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.yml` | Container definitions |
-| `config.alloy` | Metrics and log collection config |
+| `docker-compose.yml` | All service definitions |
+| `.env.example` | Environment variables template |
+| `config.alloy` | Metrics and log collection pipeline |
+| `litellm-config.yaml` | LiteLLM gateway settings (callbacks, timeouts) |
+| `model_targets.json` | Model endpoints for metrics scraping |
 | `prom-config.yaml` | Prometheus settings |
 | `loki-config.yaml` | Loki settings |
+| `init-multi-db.sh` | Creates Langfuse database on first Postgres startup |
 | `dashboards/` | Auto-provisioned Grafana dashboards |
 
-## Customization
+## Verify
 
-Edit `config.alloy` to:
-- Add/remove metric collectors
-- Change scrape intervals
-- Modify log collection paths
-
-After changes, run `docker compose restart alloy`.
+```bash
+curl http://localhost:4000/health/liveliness   # LiteLLM
+curl http://localhost:3001/api/public/health    # Langfuse
+curl http://localhost:3100/ready               # Loki
+curl http://localhost:3000/api/health           # Grafana
+```
