@@ -1,7 +1,11 @@
 {
   "uid": "model-performance",
   "title": "Model Performance (vLLM)",
-  "tags": ["vllm", "models", "gpu"],
+  "tags": [
+    "vllm",
+    "models",
+    "gpu"
+  ],
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -11,7 +15,10 @@
     "list": [
       {
         "current": {},
-        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "datasource": {
+          "type": "prometheus",
+          "uid": ""
+        },
         "definition": "label_values(vllm:kv_cache_usage_perc, model_name)",
         "name": "model",
         "label": "Model",
@@ -27,15 +34,28 @@
     {
       "type": "row",
       "title": "Overview",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "collapsed": false
     },
     {
       "type": "gauge",
       "title": "KV Cache Usage",
       "description": "GPU KV cache utilization. When this hits 100%, requests start queuing.",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
       "targets": [
         {
           "expr": "vllm:kv_cache_usage_perc{model_name=~\"$model\"}",
@@ -50,9 +70,18 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.7 },
-              { "color": "red", "value": 0.9 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.7
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
             ]
           }
         }
@@ -61,8 +90,16 @@
     {
       "type": "stat",
       "title": "Requests Running",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 6, "w": 3, "x": 6, "y": 1 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 3,
+        "x": 6,
+        "y": 1
+      },
       "targets": [
         {
           "expr": "vllm:num_requests_running{model_name=~\"$model\"}",
@@ -73,9 +110,18 @@
         "defaults": {
           "thresholds": {
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 10 },
-              { "color": "red", "value": 50 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
             ]
           }
         }
@@ -85,8 +131,16 @@
       "type": "stat",
       "title": "Requests Waiting",
       "description": "Queue depth. Non-zero means the model is at capacity.",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 6, "w": 3, "x": 9, "y": 1 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 3,
+        "x": 9,
+        "y": 1
+      },
       "targets": [
         {
           "expr": "vllm:num_requests_waiting{model_name=~\"$model\"}",
@@ -97,9 +151,18 @@
         "defaults": {
           "thresholds": {
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "red", "value": 10 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
             ]
           }
         }
@@ -108,8 +171,16 @@
     {
       "type": "stat",
       "title": "Requests Completed",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 6, "w": 4, "x": 12, "y": 1 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
       "targets": [
         {
           "expr": "sum(increase(vllm:request_success_total{model_name=~\"$model\"}[5m]))",
@@ -119,7 +190,12 @@
       "fieldConfig": {
         "defaults": {
           "thresholds": {
-            "steps": [ { "color": "blue", "value": null } ]
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         }
       }
@@ -128,37 +204,62 @@
       "type": "timeseries",
       "title": "Token Throughput",
       "description": "Prompt and generation tokens per second.",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 1 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
       "targets": [
         {
           "expr": "rate(vllm:prompt_tokens_total{model_name=~\"$model\"}[1m])",
-          "legendFormat": "{{model_name}} — prompt tok/s"
+          "legendFormat": "{{model_name}} \u00e2\u20ac\u201d prompt tok/s"
         },
         {
           "expr": "rate(vllm:generation_tokens_total{model_name=~\"$model\"}[1m])",
-          "legendFormat": "{{model_name}} — gen tok/s"
+          "legendFormat": "{{model_name}} \u00e2\u20ac\u201d gen tok/s"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
         }
       }
     },
     {
       "type": "row",
       "title": "Latency",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
       "collapsed": false
     },
     {
       "type": "timeseries",
       "title": "End-to-End Request Latency",
       "description": "p50, p95, p99 of total request time.",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
       "targets": [
         {
           "expr": "histogram_quantile(0.50, sum(rate(vllm:e2e_request_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
@@ -176,16 +277,28 @@
       "fieldConfig": {
         "defaults": {
           "unit": "s",
-          "custom": { "drawStyle": "line", "fillOpacity": 5, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "lineWidth": 2
+          }
         }
       }
     },
     {
       "type": "timeseries",
       "title": "Time to First Token (TTFT)",
-      "description": "p50, p95, p99 — how long users wait before seeing output.",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "description": "p50, p95, p99 \u00e2\u20ac\u201d how long users wait before seeing output.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
       "targets": [
         {
           "expr": "histogram_quantile(0.50, sum(rate(vllm:time_to_first_token_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
@@ -203,7 +316,11 @@
       "fieldConfig": {
         "defaults": {
           "unit": "s",
-          "custom": { "drawStyle": "line", "fillOpacity": 5, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "lineWidth": 2
+          }
         }
       }
     },
@@ -211,8 +328,16 @@
       "type": "timeseries",
       "title": "Inter-Token Latency",
       "description": "Time between successive output tokens. Affects streaming UX.",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
       "targets": [
         {
           "expr": "histogram_quantile(0.50, sum(rate(vllm:inter_token_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
@@ -226,22 +351,39 @@
       "fieldConfig": {
         "defaults": {
           "unit": "s",
-          "custom": { "drawStyle": "line", "fillOpacity": 5, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "lineWidth": 2
+          }
         }
       }
     },
     {
       "type": "row",
       "title": "Queue & Cache",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
       "collapsed": false
     },
     {
       "type": "timeseries",
       "title": "Queue Wait Time",
       "description": "How long requests sit in the queue before processing starts.",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 17 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 17
+      },
       "targets": [
         {
           "expr": "histogram_quantile(0.50, sum(rate(vllm:request_queue_time_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
@@ -255,7 +397,11 @@
       "fieldConfig": {
         "defaults": {
           "unit": "s",
-          "custom": { "drawStyle": "line", "fillOpacity": 5, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "lineWidth": 2
+          }
         }
       }
     },
@@ -263,8 +409,16 @@
       "type": "timeseries",
       "title": "KV Cache Usage Over Time",
       "description": "Track cache pressure trends. Sustained >90% means you need more capacity.",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 17 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 17
+      },
       "targets": [
         {
           "expr": "vllm:kv_cache_usage_perc{model_name=~\"$model\"}",
@@ -276,7 +430,11 @@
           "unit": "percentunit",
           "min": 0,
           "max": 1,
-          "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
         }
       }
     },
@@ -284,8 +442,16 @@
       "type": "timeseries",
       "title": "Prefix Cache Hit Rate",
       "description": "Ratio of cache hits to total queries. Higher = faster repeated prompts.",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 17 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 17
+      },
       "targets": [
         {
           "expr": "rate(vllm:prefix_cache_hits_total{model_name=~\"$model\"}[5m]) / clamp_min(rate(vllm:prefix_cache_queries_total{model_name=~\"$model\"}[5m]), 1)",
@@ -297,21 +463,38 @@
           "unit": "percentunit",
           "min": 0,
           "max": 1,
-          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
         }
       }
     },
     {
       "type": "row",
       "title": "GPU (DCGM)",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
       "collapsed": false
     },
     {
       "type": "timeseries",
       "title": "GPU Utilization",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 26 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 26
+      },
       "targets": [
         {
           "expr": "DCGM_FI_DEV_GPU_UTIL",
@@ -323,15 +506,27 @@
           "unit": "percent",
           "min": 0,
           "max": 100,
-          "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
         }
       }
     },
     {
       "type": "timeseries",
       "title": "GPU Memory Used",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 26 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 26
+      },
       "targets": [
         {
           "expr": "DCGM_FI_DEV_FB_USED",
@@ -341,15 +536,27 @@
       "fieldConfig": {
         "defaults": {
           "unit": "decmbytes",
-          "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
         }
       }
     },
     {
       "type": "timeseries",
       "title": "GPU Temperature",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 26 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 26
+      },
       "targets": [
         {
           "expr": "DCGM_FI_DEV_GPU_TEMP",
@@ -359,13 +566,26 @@
       "fieldConfig": {
         "defaults": {
           "unit": "celsius",
-          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 75 },
-              { "color": "red", "value": 85 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
             ]
           }
         }
@@ -374,8 +594,16 @@
     {
       "type": "timeseries",
       "title": "GPU Power Usage",
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 26 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 26
+      },
       "targets": [
         {
           "expr": "DCGM_FI_DEV_POWER_USAGE",
@@ -385,10 +613,17 @@
       "fieldConfig": {
         "defaults": {
           "unit": "watt",
-          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 }
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
         }
       }
     }
   ],
-  "time": { "from": "now-1h", "to": "now" }
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  }
 }
