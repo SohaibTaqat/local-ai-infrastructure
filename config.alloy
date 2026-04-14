@@ -265,29 +265,14 @@ prometheus.scrape "litellm" {
 // Example model_targets.json entry:
 //   [{"targets": ["vllm-llama70b:8000"], "labels": {"model": "llama-70b", "backend": "vllm"}}]
 
-local.file_match "model_targets" {
-  path_targets = [{
-    __path__ = "/etc/alloy/model_targets.json",
-  }]
-}
-
 discovery.file "model_endpoints" {
   files = ["/etc/alloy/model_targets.json"]
   refresh_interval = "15s"
 }
 
-discovery.relabel "model_endpoints" {
-  targets = discovery.file.model_endpoints.targets
-
-  rule {
-    target_label = "instance"
-    replacement  = constants.hostname
-  }
-}
-
 prometheus.scrape "model_endpoints" {
   scrape_interval = "15s"
-  targets    = discovery.relabel.model_endpoints.output
+  targets    = discovery.file.model_endpoints.targets
   metrics_path = "/metrics"
   forward_to = [prometheus.remote_write.local.receiver]
 }
