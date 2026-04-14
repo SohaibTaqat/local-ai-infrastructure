@@ -20,7 +20,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "fixed", "fixedColor": "text" }
@@ -37,7 +37,7 @@
       "title": "GPU Count",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "count(DCGM_FI_DEV_GPU_UTIL{job=\"dcgm\"})",
           "refId": "A"
         }
@@ -45,7 +45,7 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "fixed", "fixedColor": "text" }
@@ -62,7 +62,7 @@
       "title": "GPU Models",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}} — {{modelName}}",
           "refId": "A"
@@ -78,7 +78,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -107,7 +107,7 @@
       "title": "GPU Utilization",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}}",
           "refId": "A"
@@ -116,7 +116,7 @@
       "type": "gauge"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -145,7 +145,7 @@
       "title": "Memory Utilization",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"} / (DCGM_FI_DEV_FB_USED{job=\"dcgm\"} + DCGM_FI_DEV_FB_FREE{job=\"dcgm\"}) * 100",
           "legendFormat": "GPU {{gpu}}",
           "refId": "A"
@@ -154,7 +154,7 @@
       "type": "gauge"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -179,13 +179,13 @@
       "transparent": true,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}} Used",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"} + DCGM_FI_DEV_FB_FREE{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}} Total",
           "refId": "B"
@@ -201,7 +201,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -231,7 +231,7 @@
       "title": "GPU Temperature",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}}",
           "refId": "A"
@@ -240,7 +240,7 @@
       "type": "gauge"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -268,7 +268,7 @@
       "title": "Power Draw",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}}",
           "refId": "A"
@@ -284,7 +284,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -311,7 +311,7 @@
       "title": "SM Clock",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_SM_CLOCK{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}}",
           "refId": "A"
@@ -320,7 +320,7 @@
       "type": "bargauge"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -347,7 +347,7 @@
       "title": "Memory Clock",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_MEM_CLOCK{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}}",
           "refId": "A"
@@ -363,7 +363,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -391,7 +391,7 @@
       "title": "GPU Utilization Over Time",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}}",
           "refId": "A"
@@ -400,7 +400,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -426,13 +426,13 @@
       "title": "GPU Memory Over Time",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}} Used",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm\"} + DCGM_FI_DEV_FB_FREE{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}} Total",
           "refId": "B"
@@ -441,7 +441,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -467,7 +467,7 @@
       "title": "GPU Temperature Over Time",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}}",
           "refId": "A"
@@ -476,7 +476,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -502,7 +502,7 @@
       "title": "Power Draw Over Time",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm\"}",
           "legendFormat": "GPU {{gpu}}",
           "refId": "A"

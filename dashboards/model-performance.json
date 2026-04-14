@@ -17,7 +17,7 @@
         "current": {},
         "datasource": {
           "type": "prometheus",
-          "uid": ""
+          "uid": "prometheus"
         },
         "definition": "label_values(vllm:kv_cache_usage_perc, model_name)",
         "name": "model",
@@ -48,7 +48,7 @@
       "description": "GPU KV cache utilization. When this hits 100%, requests start queuing.",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 6,
@@ -92,7 +92,7 @@
       "title": "Requests Running",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 6,
@@ -133,7 +133,7 @@
       "description": "Queue depth. Non-zero means the model is at capacity.",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 6,
@@ -173,7 +173,7 @@
       "title": "Requests Completed",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 6,
@@ -206,7 +206,7 @@
       "description": "Prompt and generation tokens per second.",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 6,
@@ -252,7 +252,7 @@
       "description": "p50, p95, p99 of total request time.",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -291,7 +291,7 @@
       "description": "p50, p95, p99 \u00e2\u20ac\u201d how long users wait before seeing output.",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -330,7 +330,7 @@
       "description": "Time between successive output tokens. Affects streaming UX.",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -376,7 +376,7 @@
       "description": "How long requests sit in the queue before processing starts.",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -411,7 +411,7 @@
       "description": "Track cache pressure trends. Sustained >90% means you need more capacity.",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -444,7 +444,7 @@
       "description": "Ratio of cache hits to total queries. Higher = faster repeated prompts.",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -487,7 +487,7 @@
       "title": "GPU Utilization",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -519,7 +519,7 @@
       "title": "GPU Memory Used",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -549,7 +549,7 @@
       "title": "GPU Temperature",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -596,7 +596,7 @@
       "title": "GPU Power Usage",
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
