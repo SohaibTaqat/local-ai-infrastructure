@@ -14,19 +14,26 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
         },
         "definition": "label_values(vllm:kv_cache_usage_perc, model_name)",
+        "query": "label_values(vllm:kv_cache_usage_perc, model_name)",
         "name": "model",
         "label": "Model",
         "type": "query",
-        "refresh": 2,
+        "refresh": 1,
         "includeAll": true,
         "multi": true,
-        "sort": 1
+        "sort": 1,
+        "regex": "",
+        "allValue": ".*"
       }
     ]
   },
