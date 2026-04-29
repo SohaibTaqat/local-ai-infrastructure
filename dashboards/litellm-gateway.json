@@ -43,7 +43,7 @@
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
       "targets": [
         {
-          "expr": "sum(rate(litellm_proxy_total_requests_metric_total{model=~\"$model\"}[1m]))",
+          "expr": "sum(rate(litellm_proxy_total_requests_metric_total{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[1m]))",
           "legendFormat": "RPS"
         }
       ],
@@ -64,12 +64,12 @@
     {
       "type": "stat",
       "title": "In-Flight Requests",
-      "description": "Live concurrency at the gateway right now (LiteLLM-side count, includes time spent in router + backend).",
+      "description": "Live concurrency at the gateway right now (LiteLLM-side count, includes time spent in router + backend). Excludes the litellm-internal-health-check pings that fire continuously in the background.",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
       "targets": [
         {
-          "expr": "sum(litellm_in_flight_requests{model=~\"$model\"})",
+          "expr": "sum(litellm_in_flight_requests{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"})",
           "legendFormat": "in-flight"
         }
       ],
@@ -102,7 +102,7 @@
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
       "targets": [
         {
-          "expr": "sum(rate(litellm_proxy_failed_requests_metric_total{model=~\"$model\"}[5m])) / clamp_min(sum(rate(litellm_proxy_total_requests_metric_total{model=~\"$model\"}[5m])), 1)",
+          "expr": "sum(rate(litellm_proxy_failed_requests_metric_total{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[5m])) / clamp_min(sum(rate(litellm_proxy_total_requests_metric_total{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[5m])), 1)",
           "legendFormat": "error rate"
         }
       ],
@@ -137,7 +137,7 @@
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(litellm_overhead_latency_metric_bucket{model=~\"$model\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(litellm_overhead_latency_metric_bucket{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[5m])) by (le))",
           "legendFormat": "overhead p95"
         }
       ],
@@ -176,7 +176,7 @@
       "gridPos": { "h": 8, "w": 8, "x": 0, "y": 6 },
       "targets": [
         {
-          "expr": "sum by (model) (rate(litellm_proxy_total_requests_metric_total{model=~\"$model\"}[1m]))",
+          "expr": "sum by (model) (rate(litellm_proxy_total_requests_metric_total{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[1m]))",
           "legendFormat": "{{model}}"
         }
       ],
@@ -204,11 +204,11 @@
       "gridPos": { "h": 8, "w": 8, "x": 8, "y": 6 },
       "targets": [
         {
-          "expr": "sum(rate(litellm_proxy_failed_requests_metric_total{model=~\"$model\"}[1m]))",
+          "expr": "sum(rate(litellm_proxy_failed_requests_metric_total{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[1m]))",
           "legendFormat": "proxy failures (4xx)"
         },
         {
-          "expr": "sum(rate(litellm_llm_api_failed_requests_metric_total{model=~\"$model\"}[1m]))",
+          "expr": "sum(rate(litellm_llm_api_failed_requests_metric_total{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[1m]))",
           "legendFormat": "backend API failures"
         }
       ],
@@ -243,15 +243,15 @@
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 6 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(litellm_request_total_latency_metric_bucket{model=~\"$model\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(litellm_request_total_latency_metric_bucket{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[5m])) by (le))",
           "legendFormat": "total p95"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(litellm_llm_api_latency_metric_bucket{model=~\"$model\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(litellm_llm_api_latency_metric_bucket{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[5m])) by (le))",
           "legendFormat": "backend p95"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(litellm_overhead_latency_metric_bucket{model=~\"$model\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(litellm_overhead_latency_metric_bucket{model=~\"$model\", model!~\".*health.*\", litellm_model_name!~\".*health.*\"}[5m])) by (le))",
           "legendFormat": "overhead p95"
         }
       ],
@@ -340,7 +340,7 @@
     {
       "type": "table",
       "title": "Deployment State & Cooldowns",
-      "description": "Per-deployment health. State 1 = up, 0 = down. Cooldowns total = how many times LiteLLM marked this backend as unhealthy and stopped routing to it.",
+      "description": "Per-deployment health (LiteLLM's view). State 0 = healthy/UP, 1 = partial outage, 2 = full outage. Note: LiteLLM only updates this when it tries to route to the deployment — a backend that is down but not being queried may still show UP. Cooldowns = how many times LiteLLM marked this backend unhealthy and temporarily stopped routing to it.",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 },
       "targets": [
@@ -389,7 +389,7 @@
               {
                 "id": "mappings",
                 "value": [
-                  { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+                  { "type": "value", "options": { "0": { "text": "UP", "color": "green" }, "1": { "text": "PARTIAL OUTAGE", "color": "yellow" }, "2": { "text": "OUTAGE", "color": "red" } } }
                 ]
               },
               { "id": "custom.cellOptions", "value": { "type": "color-text" } }
@@ -419,7 +419,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
       "targets": [
         {
-          "expr": "topk(10, sum by (api_key_alias, hashed_api_key) (rate(litellm_requests_metric_total{model=~\"$model\"}[1m])))",
+          "expr": "topk(10, sum by (api_key_alias, hashed_api_key) (rate(litellm_requests_metric_total{model=~\"$model\", api_key_alias!=\"litellm-internal-health-check\"}[1m])))",
           "legendFormat": "{{api_key_alias}} ({{hashed_api_key}})"
         }
       ],
@@ -447,7 +447,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
       "targets": [
         {
-          "expr": "topk(10, sum by (api_key_alias, hashed_api_key) (rate(litellm_total_tokens_metric_total{model=~\"$model\"}[1m])))",
+          "expr": "topk(10, sum by (api_key_alias, hashed_api_key) (rate(litellm_total_tokens_metric_total{model=~\"$model\", api_key_alias!=\"litellm-internal-health-check\"}[1m])))",
           "legendFormat": "{{api_key_alias}} ({{hashed_api_key}})"
         }
       ],
@@ -481,7 +481,7 @@
       "gridPos": { "h": 8, "w": 8, "x": 0, "y": 33 },
       "targets": [
         {
-          "expr": "sum by (model) (rate(litellm_spend_metric_total{model=~\"$model\"}[5m])) * 60",
+          "expr": "sum by (model) (rate(litellm_spend_metric_total{model=~\"$model\", model!~\".*health.*\"}[5m])) * 60",
           "legendFormat": "{{model}}"
         }
       ],
@@ -507,7 +507,7 @@
       "gridPos": { "h": 8, "w": 4, "x": 8, "y": 33 },
       "targets": [
         {
-          "expr": "sum(increase(litellm_spend_metric_total{model=~\"$model\"}[$__range]))",
+          "expr": "sum(increase(litellm_spend_metric_total{model=~\"$model\", model!~\".*health.*\"}[$__range]))",
           "legendFormat": "spend"
         }
       ],
@@ -528,12 +528,12 @@
     {
       "type": "table",
       "title": "Remaining Budget by API Key",
-      "description": "Per-key budget headroom. When this hits 0, the key starts getting rejected at the gateway.",
+      "description": "Per-key budget headroom — only keys with a max_budget configured. When remaining hits 0, the key starts getting rejected at the gateway. Keys with no budget set (unlimited) are excluded from this view.",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
       "targets": [
         {
-          "expr": "litellm_remaining_api_key_budget_metric",
+          "expr": "litellm_remaining_api_key_budget_metric and on(hashed_api_key) (litellm_api_key_max_budget_metric > 0)",
           "legendFormat": "{{api_key_alias}}",
           "format": "table",
           "instant": true,
