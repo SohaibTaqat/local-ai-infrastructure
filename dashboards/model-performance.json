@@ -209,6 +209,148 @@
     },
     {
       "type": "timeseries",
+      "title": "Concurrent Requests Over Time",
+      "description": "In-flight requests (running) + queued (waiting) per model. Hover any past timestamp to see exact concurrency at that moment, then cross-reference with KV cache, GPU, and latency panels below.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 0,
+        "y": 7
+      },
+      "targets": [
+        {
+          "expr": "vllm:num_requests_running{model_name=~\"$model\"}",
+          "legendFormat": "{{model_name}} — running"
+        },
+        {
+          "expr": "vllm:num_requests_waiting{model_name=~\"$model\"}",
+          "legendFormat": "{{model_name}} — waiting"
+        },
+        {
+          "expr": "vllm:num_requests_running{model_name=~\"$model\"} + vllm:num_requests_waiting{model_name=~\"$model\"}",
+          "legendFormat": "{{model_name}} — total in-flight"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*total in-flight.*"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Peak Concurrency (window)",
+      "description": "Highest total in-flight requests observed within the dashboard's selected time range.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 7
+      },
+      "targets": [
+        {
+          "expr": "max_over_time((vllm:num_requests_running{model_name=~\"$model\"} + vllm:num_requests_waiting{model_name=~\"$model\"})[$__range:])",
+          "legendFormat": "{{model_name}} peak"
+        },
+        {
+          "expr": "avg_over_time((vllm:num_requests_running{model_name=~\"$model\"} + vllm:num_requests_waiting{model_name=~\"$model\"})[$__range:])",
+          "legendFormat": "{{model_name}} avg"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
+      }
+    },
+    {
+      "type": "timeseries",
       "title": "Token Throughput",
       "description": "Prompt and generation tokens per second.",
       "datasource": {
@@ -249,7 +391,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 15
       },
       "collapsed": false
     },
@@ -265,7 +407,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 8
+        "y": 16
       },
       "targets": [
         {
@@ -304,7 +446,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 8
+        "y": 16
       },
       "targets": [
         {
@@ -343,7 +485,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 8
+        "y": 16
       },
       "targets": [
         {
@@ -373,7 +515,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 24
       },
       "collapsed": false
     },
@@ -389,7 +531,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 17
+        "y": 25
       },
       "targets": [
         {
@@ -424,7 +566,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 17
+        "y": 25
       },
       "targets": [
         {
@@ -457,7 +599,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 17
+        "y": 25
       },
       "targets": [
         {
@@ -485,7 +627,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 33
       },
       "collapsed": false
     },
@@ -500,7 +642,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 26
+        "y": 34
       },
       "targets": [
         {
@@ -532,7 +674,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 26
+        "y": 34
       },
       "targets": [
         {
@@ -562,7 +704,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 26
+        "y": 34
       },
       "targets": [
         {
@@ -609,7 +751,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 26
+        "y": 34
       },
       "targets": [
         {
