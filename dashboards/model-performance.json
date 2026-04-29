@@ -65,8 +65,8 @@
       },
       "targets": [
         {
-          "expr": "vllm:kv_cache_usage_perc{model_name=~\"$model\"}",
-          "legendFormat": "{{model_name}}"
+          "expr": "max_over_time(vllm:kv_cache_usage_perc{model_name=~\"$model\"}[1m])",
+          "legendFormat": "{{model_name}} @ {{instance}}"
         }
       ],
       "fieldConfig": {
@@ -109,8 +109,8 @@
       },
       "targets": [
         {
-          "expr": "vllm:num_requests_running{model_name=~\"$model\"}",
-          "legendFormat": "{{model_name}}"
+          "expr": "max_over_time(vllm:num_requests_running{model_name=~\"$model\"}[1m])",
+          "legendFormat": "{{model_name}} @ {{instance}}"
         }
       ],
       "fieldConfig": {
@@ -150,8 +150,8 @@
       },
       "targets": [
         {
-          "expr": "vllm:num_requests_waiting{model_name=~\"$model\"}",
-          "legendFormat": "{{model_name}}"
+          "expr": "max_over_time(vllm:num_requests_waiting{model_name=~\"$model\"}[1m])",
+          "legendFormat": "{{model_name}} @ {{instance}}"
         }
       ],
       "fieldConfig": {
@@ -190,8 +190,8 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(vllm:request_success_total{model_name=~\"$model\"}[5m]))",
-          "legendFormat": "Last 5m"
+          "expr": "sum(increase(vllm:request_success_total{model_name=~\"$model\"}[$__range]))",
+          "legendFormat": "Total in window"
         }
       ],
       "fieldConfig": {
@@ -223,16 +223,16 @@
       },
       "targets": [
         {
-          "expr": "vllm:num_requests_running{model_name=~\"$model\"}",
-          "legendFormat": "{{model_name}} — running"
+          "expr": "max_over_time(vllm:num_requests_running{model_name=~\"$model\"}[1m])",
+          "legendFormat": "{{model_name}} @ {{instance}} — running"
         },
         {
-          "expr": "vllm:num_requests_waiting{model_name=~\"$model\"}",
-          "legendFormat": "{{model_name}} — waiting"
+          "expr": "max_over_time(vllm:num_requests_waiting{model_name=~\"$model\"}[1m])",
+          "legendFormat": "{{model_name}} @ {{instance}} — waiting"
         },
         {
-          "expr": "vllm:num_requests_running{model_name=~\"$model\"} + vllm:num_requests_waiting{model_name=~\"$model\"}",
-          "legendFormat": "{{model_name}} — total in-flight"
+          "expr": "sum by (model_name) (max_over_time(vllm:num_requests_running{model_name=~\"$model\"}[1m]) + max_over_time(vllm:num_requests_waiting{model_name=~\"$model\"}[1m]))",
+          "legendFormat": "{{model_name}} — cluster total"
         }
       ],
       "fieldConfig": {
@@ -253,7 +253,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*total in-flight.*"
+              "options": ".*cluster total.*"
             },
             "properties": [
               {
@@ -306,12 +306,12 @@
       },
       "targets": [
         {
-          "expr": "max_over_time((vllm:num_requests_running{model_name=~\"$model\"} + vllm:num_requests_waiting{model_name=~\"$model\"})[$__range:])",
-          "legendFormat": "{{model_name}} peak"
+          "expr": "max_over_time(sum by (model_name) (vllm:num_requests_running{model_name=~\"$model\"} + vllm:num_requests_waiting{model_name=~\"$model\"})[$__range:])",
+          "legendFormat": "{{model_name}} cluster peak"
         },
         {
-          "expr": "avg_over_time((vllm:num_requests_running{model_name=~\"$model\"} + vllm:num_requests_waiting{model_name=~\"$model\"})[$__range:])",
-          "legendFormat": "{{model_name}} avg"
+          "expr": "avg_over_time(sum by (model_name) (vllm:num_requests_running{model_name=~\"$model\"} + vllm:num_requests_waiting{model_name=~\"$model\"})[$__range:])",
+          "legendFormat": "{{model_name}} cluster avg"
         }
       ],
       "fieldConfig": {
@@ -366,11 +366,11 @@
       "targets": [
         {
           "expr": "rate(vllm:prompt_tokens_total{model_name=~\"$model\"}[1m])",
-          "legendFormat": "{{model_name}} \u00e2\u20ac\u201d prompt tok/s"
+          "legendFormat": "{{model_name}} @ {{instance}} \u2014 prompt tok/s"
         },
         {
           "expr": "rate(vllm:generation_tokens_total{model_name=~\"$model\"}[1m])",
-          "legendFormat": "{{model_name}} \u00e2\u20ac\u201d gen tok/s"
+          "legendFormat": "{{model_name}} @ {{instance}} \u2014 gen tok/s"
         }
       ],
       "fieldConfig": {
@@ -411,16 +411,16 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(vllm:e2e_request_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p50"
+          "expr": "histogram_quantile(0.50, sum(rate(vllm:e2e_request_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p50"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(vllm:e2e_request_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p95"
+          "expr": "histogram_quantile(0.95, sum(rate(vllm:e2e_request_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p95"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(vllm:e2e_request_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p99"
+          "expr": "histogram_quantile(0.99, sum(rate(vllm:e2e_request_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p99"
         }
       ],
       "fieldConfig": {
@@ -450,16 +450,16 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(vllm:time_to_first_token_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p50"
+          "expr": "histogram_quantile(0.50, sum(rate(vllm:time_to_first_token_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p50"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(vllm:time_to_first_token_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p95"
+          "expr": "histogram_quantile(0.95, sum(rate(vllm:time_to_first_token_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p95"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(vllm:time_to_first_token_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p99"
+          "expr": "histogram_quantile(0.99, sum(rate(vllm:time_to_first_token_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p99"
         }
       ],
       "fieldConfig": {
@@ -489,12 +489,12 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(vllm:inter_token_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p50"
+          "expr": "histogram_quantile(0.50, sum(rate(vllm:inter_token_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p50"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(vllm:inter_token_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p95"
+          "expr": "histogram_quantile(0.95, sum(rate(vllm:inter_token_latency_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p95"
         }
       ],
       "fieldConfig": {
@@ -535,12 +535,12 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(vllm:request_queue_time_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p50"
+          "expr": "histogram_quantile(0.50, sum(rate(vllm:request_queue_time_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p50"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(vllm:request_queue_time_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name))",
-          "legendFormat": "{{model_name}} p95"
+          "expr": "histogram_quantile(0.95, sum(rate(vllm:request_queue_time_seconds_bucket{model_name=~\"$model\"}[5m])) by (le, model_name, instance))",
+          "legendFormat": "{{model_name}} @ {{instance}} p95"
         }
       ],
       "fieldConfig": {
@@ -570,8 +570,8 @@
       },
       "targets": [
         {
-          "expr": "vllm:kv_cache_usage_perc{model_name=~\"$model\"}",
-          "legendFormat": "{{model_name}}"
+          "expr": "max_over_time(vllm:kv_cache_usage_perc{model_name=~\"$model\"}[1m])",
+          "legendFormat": "{{model_name}} @ {{instance}}"
         }
       ],
       "fieldConfig": {
@@ -604,7 +604,7 @@
       "targets": [
         {
           "expr": "rate(vllm:prefix_cache_hits_total{model_name=~\"$model\"}[5m]) / clamp_min(rate(vllm:prefix_cache_queries_total{model_name=~\"$model\"}[5m]), 1)",
-          "legendFormat": "{{model_name}}"
+          "legendFormat": "{{model_name}} @ {{instance}}"
         }
       ],
       "fieldConfig": {

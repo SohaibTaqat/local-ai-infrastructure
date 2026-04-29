@@ -271,7 +271,9 @@ discovery.file "model_endpoints" {
 }
 
 prometheus.scrape "model_endpoints" {
-  scrape_interval = "15s"
+  // 5s captures short request bursts (< 15s) that would otherwise fall
+  // between scrapes and leave gauges like num_requests_running reading 0.
+  scrape_interval = "5s"
   targets    = discovery.file.model_endpoints.targets
   metrics_path = "/metrics"
   forward_to = [prometheus.remote_write.local.receiver]
